@@ -143,9 +143,9 @@ def create_stock():
     db.session.add(stock1)
     db.session.commit()
 
-    return jsonify("Stock: "+ stock1.name+", created"), 200
+    return jsonify("Stock: "+ stock1.name+", created. "+ "ID: " + str(stock1.id)), 200
 
-@app.route('/stock/<int:stock_symbol>', methods=['PUT'])
+@app.route('/stock/<stock_symbol>', methods=['PUT'])
 def update_stock(stock_symbol):
     request_stock=request.get_json()
     stock1 = Stock.query.get(stock_symbol)
