@@ -14,6 +14,8 @@ class User(db.Model):
     last_name = db.Column(db.String(80), unique=False, nullable=False)
     admin = db.Column(db.Boolean, unique=False, nullable=False, default=False)
 
+    watchlists =  db.relationship('WatchList', backref='user', lazy=True)
+
     def __repr__(self):
         return '<User %r>' % self.email
 
@@ -28,8 +30,10 @@ class User(db.Model):
         }
 class WatchList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False )
     name = db.Column(db.String(120), unique=False, nullable=False)
+
+    watchelements= db.relationship('WatchElement', backref='watchlist', lazy=True)
 
 
     def __repr__(self):
@@ -40,7 +44,6 @@ class WatchList(db.Model):
             "id": self.id,
             "user_id":self.user_id,
             "name": self.name,
-            # do not serialize the password, its a security breach
         }    
 
 class Stock(db.Model):
@@ -48,6 +51,7 @@ class Stock(db.Model):
     name = db.Column(db.String(120), unique=False, nullable=False)
     symbol = db.Column(db.String(12))
 
+    watchelements= db.relationship('WatchElement', backref='stock', lazy=True)
 
     def __repr__(self):
         return '<Stock %r>' % self.symbol
@@ -57,22 +61,23 @@ class Stock(db.Model):
             "id": self.id,
             "name":self.name,
             "symbol": self.symbol,
-            # do not serialize the password, its a security breach
         }
- 
-class ElementList(db.Model):
+
+class WatchElement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    watchlist_id = db.Column(db.Integer)
-    stock_symbol = db.Column(db.String(12))
+    watchlist_id = db.Column(db.Integer,db.ForeignKey("watchlist.id"))
+    stock_id = db.Column(db.Integer, db.ForeignKey("stock.id"),)
+
+
 
 
     def __repr__(self):
-        return '<ElementList %r>' % self.stock_symbol
+        return '<WatchElement %r>' % self.stock_id
 
     def serialize(self):
         return {
             "id": self.id,
             "watchlist_id":self.watchlist_id,
-            "stock_symbol": self.stock_symbol,
-            # do not serialize the password, its a security breach
+            "stock_symbol": self.stock_id,
         }
+

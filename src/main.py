@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, WatchList, Stock, ElementList
+from models import db, User, WatchList, Stock
 #from models import Person
 
 app = Flask(__name__)
@@ -40,6 +40,15 @@ def get_users():
     all_people = list(map(lambda x: x.serialize(), users))
 
     return jsonify(all_people), 200
+
+@app.route('/user/<int:user_id>', methods=['GET'])
+def get_one_user(user_id):
+
+    user = User.query.get(user_id)
+    User_ID = user.serialize()
+
+    return jsonify(User_ID), 200
+
 @app.route('/user', methods=['POST'])
 def create_users():
     request_user=request.get_json()
@@ -87,6 +96,14 @@ def get_watchlists():
     all_watchLists = list(map(lambda x: x.serialize(), watchLists))
 
     return jsonify(all_watchLists), 200
+
+@app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
+def get_one_watchlist(watchlist_id):
+
+    watchlist = Watchlist.query.get(watchlist_id)
+    Watchlist_ID = watchlist.serialize()
+
+    return jsonify(Watchlist_ID), 200
 
 @app.route('/watchlist', methods=['POST'])
 def create_watchlist():
@@ -136,6 +153,14 @@ def get_stocks():
 
     return jsonify(all_stocks), 200
 
+@app.route('/stock/<int:stock_id>', methods=['GET'])
+def get_one_stock(stock_id):
+
+    stocks = Stock.query.get(stock_id)
+    Stock_Id = stocks.serialize()
+
+    return jsonify(Stock_Id), 200
+
 @app.route('/stock', methods=['POST'])
 def create_stock():
     request_stock=request.get_json()
@@ -145,10 +170,10 @@ def create_stock():
 
     return jsonify("Stock: "+ stock1.name+", created. "+ "ID: " + str(stock1.id)), 200
 
-@app.route('/stock/<stock_symbol>', methods=['PUT'])
-def update_stock(stock_symbol):
+@app.route('/stock/<stock_id>', methods=['PUT'])
+def update_stock(stock_id):
     request_stock=request.get_json()
-    stock1 = Stock.query.get(stock_symbol)
+    stock1 = Stock.query.get(stock_id)
     if stock1 is None:
         raise APIException('Stock not found', status_code=404)
 
@@ -172,7 +197,61 @@ def delete_stock(stock_id):
     db.session.commit()
     return jsonify(stock1.name + " deleted"), 200
 
+# WATCHELEMENT CRUD
+# WATCHELEMENT CRUD
+# WATCHELEMENT CRUD
 
+@app.route('/watchelement', methods=['GET'])
+def get_watchelements():
+
+    watchelements = WatchElement.query.all()
+    all_watchelements = list(map(lambda x: x.serialize(), watchelements))
+
+    return jsonify(all_watchelements), 200
+
+@app.route('/watchelement/<int:watchelement_id>', methods=['GET'])
+def get_one_watchelement(watchelement_id):
+
+    watchelements = WatchElement.query.get(stock_id)
+    Watchelement_ID = watchelements.serialize()
+
+    return jsonify(Watchelement_ID), 200
+
+@app.route('/watchelement', methods=['POST'])
+def create_watchelement():
+    request_watchelement=request.get_json()
+    watchelement1 = WatchElement(watchlist_id=request_watchelement["watchlist_id"],stock_symbol=request_watchelement["stock_symbol"])
+    db.session.add(watchelement1)
+    db.session.commit()
+
+    return jsonify("Watch element from Watchlist: "+ watchelement1.watchlist_id+", created. "+ "ID: " + str(watchelement1.id)), 200
+
+@app.route('/watchelement/<watchelement_id>', methods=['PUT'])
+def update_watchelement(watchelement_id):
+    request_watchelement=request.get_json()
+    watchelement1 = WatchElement.query.get(watchelement_id)
+    if watchelement1 is None:
+        raise APIException('Watch element not found', status_code=404)
+
+    if "symbol" in request_watchelement:
+        watchelement1.symbol = request_watchelement["symbol"]
+    if "name" in request_watchelement:
+        watchelement1.name = request_watchelement["name"]
+
+    db.session.commit()
+    return jsonify("Watch element Updated"), 200
+
+@app.route('/watchelement/<int:watchelement_id>', methods=['DELETE'])
+def delete_watchelement(watchelement_id):
+    request_watchelement=request.get_json()
+    watchelement1 = WatchElement.query.get(watchelement_id)
+    if watchelement1 is None:
+        raise APIException('Watch element not found', status_code=404)
+    db.session.delete(watchelement1)
+    db.session.commit()
+
+    db.session.commit()
+    return jsonify("Watch element from Watchlist: "+ watchelement1.watchlist_id+ " deleted"), 200
 
 
 
