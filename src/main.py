@@ -30,9 +30,21 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+# EXTERNAL DATA LINK
+# EXTERNAL DATA LINK
+# EXTERNAL DATA LINK
+
+# @app.route('/stockdata', methods=['GET'])
+# def get_external_data():
+#    r=request.get("")
+
+
 # USER CRUD
 # USER CRUD
 # USER CRUD#
+   
+
+
 @app.route('/user', methods=['GET'])
 def get_users():
 

@@ -33,7 +33,7 @@ class WatchList(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False )
     name = db.Column(db.String(120), unique=False, nullable=False)
 
-    watchelements= db.relationship('WatchElement', lazy=True)
+    watchelements= db.relationship('WatchElement',backref='watch_list', lazy=True)
 
 
     def __repr__(self):
@@ -65,7 +65,7 @@ class Stock(db.Model):
 
 class WatchElement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    watchlist_id = db.Column(db.Integer, db.ForeignKey("WatchList.id"))
+    watchlist_id = db.Column(db.Integer, db.ForeignKey("watch_list.id"))
     stock_id = db.Column(db.Integer, db.ForeignKey("stock.id"))
 
 
