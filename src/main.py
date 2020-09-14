@@ -2,6 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+import requests
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -34,9 +35,40 @@ def sitemap():
 # EXTERNAL DATA LINK
 # EXTERNAL DATA LINK
 
-# @app.route('/stockdata', methods=['GET'])
-# def get_external_data():
-#    r=request.get("")
+@app.route('/stockdata', methods=['GET'])
+def get_external_data():
+   ## request_stock_list=request.get_json("https://finnhub.io/api/v1/stock/symbol?exchange=US")
+    
+   # return (request_stock_list), 200
+    url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
+    payload = {}
+    headers = {
+    'X-Finnhub-Token': 'bsrbhmf48v6tucpg28a0',
+    'Cookie': '__cfduid=d93b1db03817fa9f12c3158268b3eba861600100583'
+    }
+    response = requests.request("GET", url, headers=headers, data=payload)
+    resp = response.json()
+    for i in range(len(resp)):
+        for c, v in resp[i].items():
+            name1=""
+            symbol1=""
+            if c == "symbol":
+                print(v)
+                name1=v
+            elif c == "description":
+                symbol1=v
+                print(symbol1)
+            stock1=Stock(name=name1,symbol=symbol1)
+            db.session.add(stock1)
+        db.session.commit()
+    return("oook")
+
+@app.route('/stockdata/', methods=['DELETE'])
+def delete_all_stocks():
+    db.session.delete.all()
+    db.session.commit()
+
+    return jsonify("Everything deleted"), 200
 
 
 # USER CRUD
@@ -208,6 +240,7 @@ def delete_stock(stock_id):
 
     db.session.commit()
     return jsonify(stock1.name + " deleted"), 200
+
 
 # WATCHELEMENT CRUD
 # WATCHELEMENT CRUD
