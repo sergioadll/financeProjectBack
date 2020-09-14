@@ -37,9 +37,10 @@ def sitemap():
 
 @app.route('/stockdata', methods=['GET'])
 def get_external_data():
-   ## request_stock_list=request.get_json("https://finnhub.io/api/v1/stock/symbol?exchange=US")
-    
-   # return (request_stock_list), 200
+    #delete the previous table
+    Stock.query.delete()
+    db.session.commit()
+    #get the data from external api
     url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
     payload = {}
     headers = {
@@ -67,10 +68,28 @@ def get_external_data():
 
 @app.route('/stockdata/', methods=['DELETE'])
 def delete_all_stocks():
-    db.session.delete.all()
+    Stock.query.delete()
     db.session.commit()
 
     return jsonify("Everything deleted"), 200
+
+# REQUIRED ROUTES
+# REQUIRED ROUTES
+# REQUIRED ROUTES
+
+# '/user/<int:user_id>/watchlist' 
+# GET: NOT WORKING
+
+# /watchlist/:ID
+# GET: /watchlist/:ID done
+# POST: /watchlist/:ID done
+# PUT: /watchlist/:ID done
+# DELETE: /watchlist/:ID done
+
+# /watchelement/:watchlistID
+# GET: /watchelement/:watchlistID done
+# POST: /watchelement/:watchlistID done
+# DELETE: /watchelement/:watchlistID done
 
 
 # USER CRUD
@@ -94,6 +113,15 @@ def get_one_user(user_id):
     User_ID = user.serialize()
 
     return jsonify(User_ID), 200
+
+@app.route('/user/<int:user_id>/watchlist', methods=['GET'])
+def get_watchlist_from_user(user_id):
+
+    user = User.query.get(user_id)
+    watchlists_user=user.watchlists
+
+    return jsonify(user.serialize()), 200
+
 
 @app.route('/user', methods=['POST'])
 def create_users():
@@ -146,7 +174,7 @@ def get_watchlists():
 @app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
 def get_one_watchlist(watchlist_id):
 
-    watchlist = Watchlist.query.get(watchlist_id)
+    watchlist = WatchList.query.get(watchlist_id)
     Watchlist_ID = watchlist.serialize()
 
     return jsonify(Watchlist_ID), 200
@@ -167,8 +195,6 @@ def update_watchlist(watchlist_id):
     if watchlist1 is None:
         raise APIException('Watchlist not found', status_code=404)
 
-    if "user_id" in request_watchlist:
-        watchlist1.user_id = request_watchlist["user_id"]
     if "name" in request_watchlist:
         watchlist1.name = request_watchlist["name"]
 

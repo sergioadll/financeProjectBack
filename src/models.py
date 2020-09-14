@@ -25,6 +25,7 @@ class User(db.Model):
             "email": self.email,
             "name": self.name,
             "last_name": self.last_name,
+            "watchlists": self.watchlists,
             "admin":self.admin
             # do not serialize the password, its a security breach
         }
