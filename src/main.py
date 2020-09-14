@@ -48,19 +48,21 @@ def get_external_data():
     }
     response = requests.request("GET", url, headers=headers, data=payload)
     resp = response.json()
+    name1=""
+    symbol1=""
+
     for i in range(len(resp)):
         for c, v in resp[i].items():
-            name1=""
-            symbol1=""
-            if c == "symbol":
-                print(v)
+            if c == "description" and v != "":
                 name1=v
-            elif c == "description":
+                #print(name1)
+            elif c == "symbol" and v != "":
                 symbol1=v
-                print(symbol1)
-            stock1=Stock(name=name1,symbol=symbol1)
-            db.session.add(stock1)
-        db.session.commit()
+                #print(symbol1)
+           
+        stock1=Stock(name=name1,symbol=symbol1)
+        db.session.add(stock1)
+    db.session.commit()
     return("oook")
 
 @app.route('/stockdata/', methods=['DELETE'])
