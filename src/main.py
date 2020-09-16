@@ -9,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, WatchList, Stock, WatchElement
+from models import db, User, WatchList, Stock
 #from models import Person
 
 app = Flask(__name__)
@@ -35,9 +35,10 @@ def sitemap():
 # EXTERNAL DATA LINK
 # EXTERNAL DATA LINK
 
+# CARGA TODOS LOS STOCKS A NUESTRA API
 @app.route('/stockdata', methods=['GET'])
 def get_external_data():
-    #delete the previous table
+    #delete the previous table CHECK
     Stock.query.delete()
     db.session.commit()
     #get the data from external api
@@ -66,23 +67,19 @@ def get_external_data():
     db.session.commit()
     return("oook")
 
-@app.route('/stockdata/', methods=['DELETE'])
+@app.route('/stockdata/', methods=['DELETE'])### chequear
 def delete_all_stocks():
     Stock.query.delete()
     db.session.commit()
 
     return jsonify("Everything deleted"), 200
 
-# REQUIRED ROUTES
-# REQUIRED ROUTES
-# REQUIRED ROUTES
-
 # USER CRUD
 # USER CRUD
 # USER CRUD
    
 
-
+#ADMIN TRAE TODOS LOS USUARIOS
 @app.route('/user', methods=['GET'])
 def get_users():
 
@@ -90,6 +87,8 @@ def get_users():
     all_people = list(map(lambda x: x.serialize(), users))
 
     return jsonify(all_people), 200
+
+#ADMIN/TRADER TRAE TODOS LOS USUARIOS
 
 @app.route('/user/<int:user_id>', methods=['GET'])
 def get_one_user(user_id):
@@ -99,15 +98,18 @@ def get_one_user(user_id):
 
     return jsonify(User_ID), 200
 
+# TRAE TODOS LOS WATCHLISTS DE UN TRADER
 @app.route('/user/<int:user_id>/watchlist', methods=['GET'])
-def get_watchlist_from_user(user_id):
+def get_watchlists_from_user(user_id):
 
     user = User.query.get(user_id)
-    watchlists_user=user.serialize()["watchlists"]
+    watchlists_user=user.watchlists
+    watchlist_info=list(map(lambda x: x.watch_list_serialize(), watchlists_user))
 
-    return jsonify(watchlists_user), 200
 
+    return jsonify(watchlist_info), 200
 
+# CREA UN NUEVO USUARIO
 @app.route('/user', methods=['POST'])
 def create_users():
     request_user=request.get_json()
@@ -117,6 +119,7 @@ def create_users():
 
     return jsonify("User: "+ user1.email+", created"), 200
 
+# MODIFICA UN USUARIO
 @app.route('/user/<int:user_id>', methods=['PUT'])
 def update_users(user_id):
     request_user=request.get_json()
@@ -132,6 +135,7 @@ def update_users(user_id):
     db.session.commit()
     return jsonify("User Updated"), 200
 
+# ELIMINA UN USUARIO
 @app.route('/user/<int:user_id>', methods=['DELETE'])
 def delete_users(user_id):
     request_user=request.get_json()
@@ -148,14 +152,8 @@ def delete_users(user_id):
 # WATCHLIST CRUD
 # WATCHLIST CRUD
 # WATCHLIST CRUD
-@app.route('/watchlist', methods=['GET'])
-def get_watchlists():
 
-    watchLists = WatchList.query.all()
-    all_watchLists = list(map(lambda x: x.serialize(), watchLists))
-
-    return jsonify(all_watchLists), 200
-
+# TRAE LA INFORMACIÓN DE TODOS LOS STOCK EN UN WATCHLIST
 @app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
 def get_one_watchlist(watchlist_id):
 
@@ -164,14 +162,7 @@ def get_one_watchlist(watchlist_id):
 
     return jsonify(Watchlist_ID), 200
 
-@app.route('/watchlist/<int:watchlist_id>/watchelement', methods=['GET'])
-def get_watchelements_from_watchlist(watchlist_id):
-
-    watchlist = WatchList.query.get(watchlist_id)
-    watchelements_watchlist=watchlist.serialize()["watchelements"]
-
-    return jsonify(watchelements_watchlist), 200
-
+# INTRODUCIR UN WATCHLIST
 @app.route('/watchlist', methods=['POST'])
 def create_watchlist():
     request_watchlist=request.get_json()
@@ -181,6 +172,7 @@ def create_watchlist():
 
     return jsonify("Watchlist: "+ watchlist1.name+", created"), 200
 
+# MODIFICAR UN WATCHLIST (CAMBIAR NOMBRE O STOCKS)
 @app.route('/watchlist/<int:watchlist_id>', methods=['PUT'])
 def update_watchlist(watchlist_id):
     request_watchlist=request.get_json()
@@ -194,6 +186,7 @@ def update_watchlist(watchlist_id):
     db.session.commit()
     return jsonify("Watchlist Updated"), 200
 
+# ELIMINAR UN WATCHLIST
 @app.route('/watchlist/<int:watchlist_id>', methods=['DELETE'])
 def delete_watchlist(watchlist_id):
     request_watchList=request.get_json()
@@ -210,6 +203,7 @@ def delete_watchlist(watchlist_id):
 # STOCK CRUD
 # STOCK CRUD
 
+#TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE)
 @app.route('/stock', methods=['GET'])
 def get_stocks():
 
@@ -217,111 +211,6 @@ def get_stocks():
     all_stocks = list(map(lambda x: x.serialize(), stocks))
 
     return jsonify(all_stocks), 200
-
-@app.route('/stock/<int:stock_id>', methods=['GET'])
-def get_one_stock(stock_id):
-
-    stocks = Stock.query.get(stock_id)
-    Stock_Id = stocks.serialize()
-
-    return jsonify(Stock_Id), 200
-
-@app.route('/stock', methods=['POST'])
-def create_stock():
-    request_stock=request.get_json()
-    stock1 = Stock(name=request_stock["name"],symbol=request_stock["symbol"])##cambiar
-    db.session.add(stock1)
-    db.session.commit()
-
-    return jsonify("Stock: "+ stock1.name+", created. "+ "ID: " + str(stock1.id)), 200
-
-@app.route('/stock/<stock_id>', methods=['PUT'])
-def update_stock(stock_id):
-    request_stock=request.get_json()
-    stock1 = Stock.query.get(stock_id)
-    if stock1 is None:
-        raise APIException('Stock not found', status_code=404)
-
-    if "symbol" in request_stock:
-        stock1.symbol = request_stock["symbol"]
-    if "name" in request_stock:
-        stock1.name = request_stock["name"]
-
-    db.session.commit()
-    return jsonify("Stock Updated"), 200
-
-@app.route('/stock/<int:stock_id>', methods=['DELETE'])
-def delete_stock(stock_id):
-    request_stock=request.get_json()
-    stock1 = Stock.query.get(stock_id)
-    if stock1 is None:
-        raise APIException('Stock not found', status_code=404)
-    db.session.delete(stock1)
-    db.session.commit()
-
-    db.session.commit()
-    return jsonify(stock1.name + " deleted"), 200
-
-
-# WATCHELEMENT CRUD
-# WATCHELEMENT CRUD
-# WATCHELEMENT CRUD
-
-@app.route('/watchelement', methods=['GET'])
-def get_watchelements():
-
-    watchelements = WatchElement.query.all()
-    all_watchelements = list(map(lambda x: x.serialize(), watchelements))
-
-    return jsonify(all_watchelements), 200
-
-@app.route('/watchelement/<int:watchelement_id>', methods=['GET'])
-def get_one_watchelement(watchelement_id):
-
-    watchelements = WatchElement.query.get(watchelement_id)
-    Watchelement_ID = watchelements.serialize()
-
-    return jsonify(Watchelement_ID), 200
-
-@app.route('/watchelement', methods=['POST'])
-def create_watchelement():
-    request_watchelement=request.get_json()
-    watchelement1 = WatchElement(watchlist_id=request_watchelement["watchlist_id"],stock_symbol=request_watchelement["stock_symbol"])
-    db.session.add(watchelement1)
-    db.session.commit()
-
-    return jsonify("Watch element from Watchlist: "+ watchelement1.watchlist_id+", created. "+ "ID: " + str(watchelement1.id)), 200
-
-@app.route('/watchelement/<watchelement_id>', methods=['PUT'])
-def update_watchelement(watchelement_id):
-    request_watchelement=request.get_json()
-    watchelement1 = WatchElement.query.get(watchelement_id)
-    if watchelement1 is None:
-        raise APIException('Watch element not found', status_code=404)
-
-    if "symbol" in request_watchelement:
-        watchelement1.symbol = request_watchelement["symbol"]
-    if "name" in request_watchelement:
-        watchelement1.name = request_watchelement["name"]
-
-    db.session.commit()
-    return jsonify("Watch element Updated"), 200
-
-@app.route('/watchelement/<int:watchelement_id>', methods=['DELETE'])
-def delete_watchelement(watchelement_id):
-    request_watchelement=request.get_json()
-    watchelement1 = WatchElement.query.get(watchelement_id)
-    if watchelement1 is None:
-        raise APIException('Watch element not found', status_code=404)
-    db.session.delete(watchelement1)
-    db.session.commit()
-
-    db.session.commit()
-    return jsonify("Watch element from Watchlist: "+ watchelement1.watchlist_id+ " deleted"), 200
-
-
-
-
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
