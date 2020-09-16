@@ -9,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, WatchList, Stock
+from models import db, User, WatchList, Stock, WatchElement
 #from models import Person
 
 app = Flask(__name__)
@@ -77,24 +77,9 @@ def delete_all_stocks():
 # REQUIRED ROUTES
 # REQUIRED ROUTES
 
-# '/user/<int:user_id>/watchlist' 
-# GET: NOT WORKING
-
-# /watchlist/:ID
-# GET: /watchlist/:ID done
-# POST: /watchlist/:ID done
-# PUT: /watchlist/:ID done
-# DELETE: /watchlist/:ID done
-
-# /watchelement/:watchlistID
-# GET: /watchelement/:watchlistID done
-# POST: /watchelement/:watchlistID done
-# DELETE: /watchelement/:watchlistID done
-
-
 # USER CRUD
 # USER CRUD
-# USER CRUD#
+# USER CRUD
    
 
 
@@ -118,9 +103,9 @@ def get_one_user(user_id):
 def get_watchlist_from_user(user_id):
 
     user = User.query.get(user_id)
-    watchlists_user=user.watchlists
+    watchlists_user=user.serialize()["watchlists"]
 
-    return jsonify(user.serialize()), 200
+    return jsonify(watchlists_user), 200
 
 
 @app.route('/user', methods=['POST'])
@@ -178,6 +163,14 @@ def get_one_watchlist(watchlist_id):
     Watchlist_ID = watchlist.serialize()
 
     return jsonify(Watchlist_ID), 200
+
+@app.route('/watchlist/<int:watchlist_id>/watchelement', methods=['GET'])
+def get_watchelements_from_watchlist(watchlist_id):
+
+    watchlist = WatchList.query.get(watchlist_id)
+    watchelements_watchlist=watchlist.serialize()["watchelements"]
+
+    return jsonify(watchelements_watchlist), 200
 
 @app.route('/watchlist', methods=['POST'])
 def create_watchlist():
@@ -285,7 +278,7 @@ def get_watchelements():
 @app.route('/watchelement/<int:watchelement_id>', methods=['GET'])
 def get_one_watchelement(watchelement_id):
 
-    watchelements = WatchElement.query.get(stock_id)
+    watchelements = WatchElement.query.get(watchelement_id)
     Watchelement_ID = watchelements.serialize()
 
     return jsonify(Watchelement_ID), 200
