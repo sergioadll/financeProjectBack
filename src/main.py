@@ -9,7 +9,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, WatchList, Stock
+from models import db, User, WatchList, Stock, SeedData
 #from models import Person
 
 app = Flask(__name__)
@@ -29,6 +29,7 @@ def handle_invalid_usage(error):
 # generate sitemap with all your endpoints
 @app.route('/')
 def sitemap():
+    SeedData.generate_data()
     return generate_sitemap(app)
 
 # EXTERNAL DATA LINK
