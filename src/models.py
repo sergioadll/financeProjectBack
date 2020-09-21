@@ -1,16 +1,13 @@
 from flask_sqlalchemy import SQLAlchemy
-import enum
 import requests
 from flask import request
 
 
 db = SQLAlchemy()
-#class UserType(enum.Enum):
-#    admin = 1
-#    trader = 0
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(db.String(80))
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
     name = db.Column(db.String(80), unique=False, nullable=False)

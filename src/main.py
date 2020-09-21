@@ -3,10 +3,17 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import os
 import requests
-from flask import Flask, request, jsonify, url_for
+from flask import Flask, request, jsonify, url_for, make_response 
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from flask_cors import CORS
+#Token and login
+from werkzeug.security import generate_password_hash, check_password_hash
+import uuid 
+import jwt
+import datetime
+from functools import wraps
+#
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, WatchList, Stock, SeedData
@@ -14,8 +21,9 @@ from models import db, User, WatchList, Stock, SeedData
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+app.config['SECRET_KEY']='Th1s1ss3cr3t'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_CONNECTION_STRING')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #cambiar a true
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
@@ -32,6 +40,61 @@ def sitemap():
     SeedData.generate_data()
     return generate_sitemap(app)
 
+# DEFINE DECORATOR TO USE WHERE LOGIN IS REQUIRED
+
+def token_required(f):  
+    @wraps(f)  
+    def decorator(*args, **kwargs):
+
+       token = None 
+
+       if 'x-access-tokens' in request.headers:  
+          token = request.headers['x-access-tokens'] 
+
+
+       if not token:  
+          return jsonify({'message': 'a valid token is missing'})   
+
+
+       try:  
+          data = jwt.decode(token, app.config[SECRET_KEY]) 
+          current_user = User.query.filter_by(public_id=data['public_id']).first()  
+       except:  
+          return jsonify({'message': 'token is invalid'})  
+
+
+          return f(current_user, *args,  **kwargs)  
+    return decorator 
+
+# USER AUTHENTICATION METHODS
+
+@app.route('/register', methods=['GET', 'POST'])
+def signup_user():  
+    data = request.get_json()  
+    user_name=data["name"]
+    hashed_password = generate_password_hash(data['password'], method='sha256')
+    
+    new_user = User(public_id=str(uuid.uuid4()),password=hashed_password, admin=False) 
+    db.session.add(new_user)  
+    db.session.commit()    
+    return jsonify({'message': 'registered successfully'})   
+
+
+@app.route('/login', methods=['GET', 'POST'])  
+def login_user(): 
+    auth = request.authorization   ##cómo funciona?
+
+    if not auth or not auth.username or not auth.password:  
+        return make_response('could not verify', 401, {'WWW.Authentication': 'Basic realm: "login required"'})    
+
+    user = User.query.filter_by(name=auth.username).first()   
+     
+    if check_password_hash(user.password, auth.password):  
+        token = jwt.encode({'public_id': user.public_id, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=1200)}, app.config['SECRET_KEY'])  
+        return jsonify({'token' : token.decode('UTF-8')}) 
+
+    return make_response('could not verify',  401, {'WWW.Authentication': 'Basic realm: "login required"'})
+
 # EXTERNAL DATA LINK
 # EXTERNAL DATA LINK
 # EXTERNAL DATA LINK
@@ -40,8 +103,8 @@ def sitemap():
 @app.route('/stockdata', methods=['GET'])
 def get_external_data():
     #delete the previous table CHECK
-    Stock.query.delete()
-    db.session.commit()
+    #Stock.query.delete()
+    #db.session.commit()
     #get the data from external api
     url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
     payload = {}
