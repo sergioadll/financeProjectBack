@@ -16,9 +16,9 @@ from functools import wraps
 #
 from utils import APIException, generate_sitemap
 from admin import setup_admin
+# Import models
 from models import db, User, WatchList, Stock, SeedData
-#from models import Person
-
+#
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config['SECRET_KEY']='Th1s1ss3cr3t'
@@ -47,34 +47,30 @@ def token_required(f):
     def decorator(*args, **kwargs):
 
        token = None 
-
        if 'x-access-tokens' in request.headers:  
           token = request.headers['x-access-tokens'] 
-
 
        if not token:  
           return jsonify({'message': 'a valid token is missing'})   
 
-
        try:  
-          data = jwt.decode(token, app.config[SECRET_KEY]) 
-          current_user = User.query.filter_by(public_id=data['public_id']).first()  
-       except:  
+          data = jwt.decode(token, app.config["SECRET_KEY"]) 
+          current_user = User.query.filter_by(public_id=data['public_id']).first() ##preguntar
+          #print("CURRENT USER",current_user.watchlists, "                 end")
+       except: 
           return jsonify({'message': 'token is invalid'})  
-
-
-          return f(current_user, *args,  **kwargs)  
+          
+       return f(current_user, *args,  **kwargs)  
     return decorator 
+
 
 # USER AUTHENTICATION METHODS
 
 @app.route('/register', methods=['GET', 'POST'])
 def signup_user():  
     data = request.get_json()  
-    user_name=data["name"]
     hashed_password = generate_password_hash(data['password'], method='sha256')
-    
-    new_user = User(public_id=str(uuid.uuid4()),password=hashed_password, admin=False) 
+    new_user = User(public_id=str(uuid.uuid4()),email=str(data["email"]),password=hashed_password,name=str(data["name"]),last_name=str(data["last_name"]), admin=False) 
     db.session.add(new_user)  
     db.session.commit()    
     return jsonify({'message': 'registered successfully'})   
@@ -82,12 +78,12 @@ def signup_user():
 
 @app.route('/login', methods=['GET', 'POST'])  
 def login_user(): 
-    auth = request.authorization   ##cómo funciona?
-
+    auth = request.authorization  
+    print(auth)
     if not auth or not auth.username or not auth.password:  
         return make_response('could not verify', 401, {'WWW.Authentication': 'Basic realm: "login required"'})    
 
-    user = User.query.filter_by(name=auth.username).first()   
+    user = User.query.filter_by(email=auth.username).first()   
      
     if check_password_hash(user.password, auth.password):  
         token = jwt.encode({'public_id': user.public_id, 'exp' : datetime.datetime.utcnow() + datetime.timedelta(minutes=1200)}, app.config['SECRET_KEY'])  
@@ -95,55 +91,12 @@ def login_user():
 
     return make_response('could not verify',  401, {'WWW.Authentication': 'Basic realm: "login required"'})
 
-# EXTERNAL DATA LINK
-# EXTERNAL DATA LINK
-# EXTERNAL DATA LINK
-
-# CARGA TODOS LOS STOCKS A NUESTRA API
-@app.route('/stockdata', methods=['GET'])
-def get_external_data():
-    #delete the previous table CHECK
-    #Stock.query.delete()
-    #db.session.commit()
-    #get the data from external api
-    url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
-    payload = {}
-    headers = {
-    'X-Finnhub-Token': 'bsrbhmf48v6tucpg28a0',
-    'Cookie': '__cfduid=d93b1db03817fa9f12c3158268b3eba861600100583'
-    }
-    response = requests.request("GET", url, headers=headers, data=payload)
-    resp = response.json()
-    name1=""
-    symbol1=""
-
-    for i in range(len(resp)):
-        for c, v in resp[i].items():
-            if c == "description" and v != "":
-                name1=v
-                #print(name1)
-            elif c == "symbol" and v != "":
-                symbol1=v
-                #print(symbol1)
-           
-        stock1=Stock(name=name1,symbol=symbol1)
-        db.session.add(stock1)
-    db.session.commit()
-    return("oook")
-
-@app.route('/stockdata/', methods=['DELETE'])### chequear
-def delete_all_stocks():
-    Stock.query.delete()
-    db.session.commit()
-
-    return jsonify("Everything deleted"), 200
-
 # USER CRUD
 # USER CRUD
 # USER CRUD
    
 
-#ADMIN TRAE TODOS LOS USUARIOS
+# ADMIN TRAE TODOS LOS USUARIOS
 @app.route('/user', methods=['GET'])
 def get_users():
 
@@ -152,7 +105,7 @@ def get_users():
 
     return jsonify(all_people), 200
 
-#ADMIN/TRADER TRAE TODOS LOS USUARIOS
+# ADMIN TRAE UN USUARIO ESPECÍFICO
 
 @app.route('/user/<int:user_id>', methods=['GET'])
 def get_one_user(user_id):
@@ -162,18 +115,7 @@ def get_one_user(user_id):
 
     return jsonify(User_ID), 200
 
-# TRAE TODOS LOS WATCHLISTS DE UN TRADER
-@app.route('/user/<int:user_id>/watchlist', methods=['GET'])
-def get_watchlists_from_user(user_id):
-
-    user = User.query.get(user_id)
-    watchlists_user=user.watchlists
-    watchlist_info=list(map(lambda x: x.watch_list_serialize(), watchlists_user))
-
-
-    return jsonify(watchlist_info), 200
-
-# CREA UN NUEVO USUARIO
+# ADMIN CREA UN NUEVO USUARIO
 @app.route('/user', methods=['POST'])
 def create_users():
     request_user=request.get_json()
@@ -212,25 +154,37 @@ def delete_users(user_id):
     db.session.commit()
     return jsonify("User deleted"), 200
 
+# TRADER ENDPOINTS
 
-# WATCHLIST CRUD
-# WATCHLIST CRUD
-# WATCHLIST CRUD
+# TRAE TODOS LOS WATCHLISTS DE UN TRADER
+# LOGGED IN
+@app.route('/user/watchlist', methods=['GET'])
+@token_required
+def get_watchlists_from_user(current_user):
+    user_watchlists=current_user.watchlists
+    user_watchlists_list=list(map(lambda x: x.watch_list_serialize(), user_watchlists))
+
+    return jsonify(user_watchlists_list), 200
 
 # TRAE LA INFORMACIÓN DE TODOS LOS STOCK EN UN WATCHLIST
+# LOGGED IN
 @app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
-def get_one_watchlist(watchlist_id):
-
+@token_required
+def get_one_watchlist(current_user,watchlist_id):
+    print(current_user)
     watchlist = WatchList.query.get(watchlist_id)
     Watchlist_ID = watchlist.serialize()
 
-    return jsonify(Watchlist_ID), 200
+    return jsonify(Watchlist_ID["stocks"]), 200
+
 
 # INTRODUCIR UN WATCHLIST
+# LOGGED IN
 @app.route('/watchlist', methods=['POST'])
-def create_watchlist():
+@token_required
+def create_watchlist(current_user):
     request_watchlist=request.get_json()
-    watchlist1 = WatchList(user_id=request_watchlist["user_id"],name=request_watchlist["name"])##cambiar
+    watchlist1 = WatchList(user_id=current_user.id,name=request_watchlist["name"])
     db.session.add(watchlist1)
     db.session.commit()
 
@@ -238,7 +192,8 @@ def create_watchlist():
 
 # MODIFICAR UN WATCHLIST (CAMBIAR NOMBRE O STOCKS)
 @app.route('/watchlist/<int:watchlist_id>', methods=['PUT'])
-def update_watchlist(watchlist_id):
+@token_required
+def update_watchlist(current_user,watchlist_id):
     request_watchlist=request.get_json()
     watchlist1 = WatchList.query.get(watchlist_id)
     if watchlist1 is None:
@@ -246,13 +201,18 @@ def update_watchlist(watchlist_id):
 
     if "name" in request_watchlist:
         watchlist1.name = request_watchlist["name"]
-
+    if "stock" in request_watchlist:
+        stock_info=request_watchlist["stock"] # podríamos intentar pasar solo el stock id o el símbolo, check later
+        stock_id=stock_info["id"]
+        stock1 = Stock.query.get(stock_id)
+        watchlist1.stocks.append(stock1)
     db.session.commit()
     return jsonify("Watchlist Updated"), 200
 
 # ELIMINAR UN WATCHLIST
 @app.route('/watchlist/<int:watchlist_id>', methods=['DELETE'])
-def delete_watchlist(watchlist_id):
+@token_required
+def delete_watchlist(current_user,watchlist_id):
     request_watchList=request.get_json()
     watchList1 = WatchList.query.get(watchlist_id)
     if watchList1 is None:

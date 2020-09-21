@@ -1,3 +1,43 @@
+# CARGA TODOS LOS STOCKS A NUESTRA API MANUALMENTE
+@app.route('/stockdata', methods=['GET'])
+def get_external_data():
+    #delete the previous table CHECK
+    #Stock.query.delete()
+    #db.session.commit()
+    #get the data from external api
+    url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
+    payload = {}
+    headers = {
+    'X-Finnhub-Token': 'bsrbhmf48v6tucpg28a0',
+    'Cookie': '__cfduid=d93b1db03817fa9f12c3158268b3eba861600100583'
+    }
+    response = requests.request("GET", url, headers=headers, data=payload)
+    resp = response.json()
+    name1=""
+    symbol1=""
+
+    for i in range(len(resp)):
+        for c, v in resp[i].items():
+            if c == "description" and v != "":
+                name1=v
+                #print(name1)
+            elif c == "symbol" and v != "":
+                symbol1=v
+                #print(symbol1)
+           
+        stock1=Stock(name=name1,symbol=symbol1)
+        db.session.add(stock1)
+    db.session.commit()
+    return("oook")
+
+@app.route('/stockdata/', methods=['DELETE'])### chequear
+def delete_all_stocks():
+    Stock.query.delete()
+    db.session.commit()
+
+    return jsonify("Everything deleted"), 200
+##
+
 @app.route('/watchlist', methods=['GET'])
 def get_watchlists():
 
@@ -5,6 +45,25 @@ def get_watchlists():
     all_watchLists = list(map(lambda x: x.serialize(), watchLists))
 
     return jsonify(all_watchLists), 200
+
+@app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
+def get_one_watchlist_default(watchlist_id):
+
+    watchlist = WatchList.query.get(watchlist_id)
+    Watchlist_ID = watchlist.serialize()
+
+    return jsonify(Watchlist_ID), 200
+
+@app.route('/user/<int:user_id>/watchlist', methods=['GET'])
+def get_watchlists_from_user_default(user_id):
+
+    user = User.query.get(user_id)
+    watchlists_user=user.watchlists
+    watchlist_info=list(map(lambda x: x.watch_list_serialize(), watchlists_user))
+
+
+    return jsonify(watchlist_info), 200
+
 
 @app.route('/stock/<int:stock_id>', methods=['GET'])
 def get_one_stock(stock_id):
