@@ -79,7 +79,7 @@ def signup_user():
 @app.route('/login', methods=['GET', 'POST'])  
 def login_user(): 
     auth = request.authorization  
-    print(auth)
+    print("print authorization",auth)
     if not auth or not auth.username or not auth.password:  
         return make_response('could not verify', 401, {'WWW.Authentication': 'Basic realm: "login required"'})    
 
@@ -171,7 +171,6 @@ def get_watchlists_from_user(current_user):
 @app.route('/watchlist/<int:watchlist_id>', methods=['GET'])
 @token_required
 def get_one_watchlist(current_user,watchlist_id):
-    print(current_user)
     watchlist = WatchList.query.get(watchlist_id)
     Watchlist_ID = watchlist.serialize()
 
@@ -202,7 +201,7 @@ def update_watchlist(current_user,watchlist_id):
     if "name" in request_watchlist:
         watchlist1.name = request_watchlist["name"]
     if "stock" in request_watchlist:
-        stock_info=request_watchlist["stock"] # podríamos intentar pasar solo el stock id o el símbolo, check later
+        stock_info=request_watchlist["stock"] # podríamos pasar sólo el stock id o el símbolo, check later
         stock_id=stock_info["id"]
         stock1 = Stock.query.get(stock_id)
         watchlist1.stocks.append(stock1)
