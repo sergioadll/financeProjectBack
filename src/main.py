@@ -59,7 +59,7 @@ def token_required(f):
           #print("CURRENT USER",current_user.watchlists, "                 end")
        except: 
           return jsonify({'message': 'token is invalid'})  
-          
+
        return f(current_user, *args,  **kwargs)  
     return decorator 
 
@@ -226,7 +226,17 @@ def delete_watchlist(current_user,watchlist_id):
 # STOCK CRUD
 # STOCK CRUD
 
-#TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE)
+# TRAER STOCK SEGÚN SU SYMBOL
+@app.route('/stock/<stockSymbol>', methods=['GET'])
+def get_stock(stockSymbol):
+
+    stock1 = Stock.query.filter_by(symbol=stockSymbol).first()
+    if stock1 is None:
+        raise APIException('Stock not found', status_code=404)
+    stockInfo=stock1.serialize()
+    return jsonify(stockInfo), 200
+
+#TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE?)
 @app.route('/stock', methods=['GET'])
 def get_stocks():
 
@@ -234,6 +244,7 @@ def get_stocks():
     all_stocks = list(map(lambda x: x.serialize(), stocks))
 
     return jsonify(all_stocks), 200
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
