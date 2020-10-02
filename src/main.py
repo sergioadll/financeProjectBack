@@ -71,8 +71,14 @@ def signup_user():
     data = request.get_json()  
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(public_id=str(uuid.uuid4()),email=str(data["email"]),password=hashed_password,name=str(data["name"]),last_name=str(data["last_name"]), admin=False) 
-    db.session.add(new_user)  
+    db.session.add(new_user) 
     db.session.commit()    
+    watchlist1 = WatchList(user_id=new_user.id, name="Your First Watchlist", default=True)
+    db.session.add(watchlist1) 
+    db.session.commit()    
+    
+    print("user id: ",new_user.id)
+
     return jsonify({'message': 'registered successfully'})   
 
 
