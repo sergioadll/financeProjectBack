@@ -73,7 +73,7 @@ def signup_user():
     new_user = User(public_id=str(uuid.uuid4()),email=str(data["email"]),password=hashed_password,name=str(data["name"]),last_name=str(data["last_name"]), admin=False) 
     db.session.add(new_user) 
     db.session.commit()    
-    watchlist1 = WatchList(user_id=new_user.id, name="Your First Watchlist", default=True)
+    watchlist1 = WatchList(user_id=new_user.id, name="Your First Watchlist",default=True)
     db.session.add(watchlist1) 
     db.session.commit()    
     
@@ -183,7 +183,7 @@ def get_one_watchlist(current_user,watchlist_id):
     return jsonify(Watchlist_ID["stocks"]), 200
 
 
-# INTRODUCIR UN WATCHLIST
+# CREAR UN WATCHLIST
 # LOGGED IN
 @app.route('/watchlist', methods=['POST'])
 @token_required
@@ -222,8 +222,9 @@ def delete_watchlist(current_user,watchlist_id):
     watchList1 = WatchList.query.get(watchlist_id)
     if watchList1 is None:
         raise APIException('Watchlist not found', status_code=404)
-    db.session.delete(watchList1)
-    db.session.commit()
+    if watchList1.default==False:
+        db.session.delete(watchList1)
+        db.session.commit()
 
     db.session.commit()
     return jsonify("Watchlist deleted"), 200
