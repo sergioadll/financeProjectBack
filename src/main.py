@@ -237,11 +237,11 @@ def delete_watchlist(current_user,watchlist_id):
 @app.route('/stock/<stockSymbol>', methods=['GET'])
 def get_stock(stockSymbol):
 
-    stock1 = Stock.query.filter_by(symbol=stockSymbol).first()
-    if stock1 is None:
+    stocks = Stock.query.filter(Stock.symbol.startswith(stockSymbol))
+    if stocks is None:
         raise APIException('Stock not found', status_code=404)
-    stockInfo=stock1.serialize()
-    return jsonify(stockInfo), 200
+    stock1 =list(map(lambda x: x.serialize(), stocks))
+    return jsonify(stock1), 200
 
 #TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE?)
 @app.route('/stock', methods=['GET'])
