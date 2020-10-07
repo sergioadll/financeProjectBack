@@ -189,13 +189,13 @@ def get_one_watchlist(current_user,watchlist_id):
 @token_required
 def create_watchlist(current_user):
     request_watchlist=request.get_json()
-    stock1=request_watchlist["stock"]
+    stock_symbol=request_watchlist["stock"]
     
     watchlist1 = WatchList(user_id=current_user.id,name=request_watchlist["name"])
     db.session.add(watchlist1)
 
-    stocks = Stock.query.filter_by(symbol=stock1).first()
-    watchlist1.stocks.append(stocks)
+    stock1 = Stock.query.filter_by(symbol=stock_symbol).first()
+    watchlist1.stocks.append(stock1)
     
     db.session.commit()
 
@@ -213,9 +213,8 @@ def update_watchlist(current_user,watchlist_id):
     if "name" in request_watchlist:
         watchlist1.name = request_watchlist["name"]
     if "stock" in request_watchlist:
-        stock_info=request_watchlist["stock"] # podríamos pasar sólo el stock id o el símbolo, check later
-        stock_id=stock_info["id"]
-        stock1 = Stock.query.get(stock_id)
+        stock_symbol = request_watchlist["stock"] # STOCK SYMBOL
+        stock1 = Stock.query.filter_by(symbol=stock_symbol).first()
         watchlist1.stocks.append(stock1)
     db.session.commit()
     return jsonify("Watchlist Updated"), 200
@@ -231,7 +230,6 @@ def delete_watchlist(current_user,watchlist_id):
     if watchList1.default==False:
         db.session.delete(watchList1)
         db.session.commit()
-
     db.session.commit()
     return jsonify("Watchlist deleted"), 200
 
@@ -249,6 +247,7 @@ def get_stocks_symbol(stockSymbol):
     stock1= stocks.serialize()
     return jsonify(stock1), 200
 
+# TRAER STOCKS QUE EMPIECEN POR...
 @app.route('/stocks/<stockSymbol>', methods=['GET'])
 def get_stock_symbol(stockSymbol):
 
