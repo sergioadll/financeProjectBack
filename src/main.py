@@ -189,8 +189,14 @@ def get_one_watchlist(current_user,watchlist_id):
 @token_required
 def create_watchlist(current_user):
     request_watchlist=request.get_json()
+    stock1=request_watchlist["stock"]
+    
     watchlist1 = WatchList(user_id=current_user.id,name=request_watchlist["name"])
     db.session.add(watchlist1)
+
+    stocks = Stock.query.filter_by(symbol=stock1).first()
+    watchlist1.stocks.append(stocks)
+    
     db.session.commit()
 
     return jsonify("Watchlist: "+ watchlist1.name+", created"), 200
@@ -235,7 +241,16 @@ def delete_watchlist(current_user,watchlist_id):
 
 # TRAER STOCK SEGÚN SU SYMBOL
 @app.route('/stock/<stockSymbol>', methods=['GET'])
-def get_stock(stockSymbol):
+def get_stocks_symbol(stockSymbol):
+
+    stocks = Stock.query.filter_by(symbol=stockSymbol).first()
+    if stocks is None:
+        raise APIException('Stock not found', status_code=404)
+    stock1= stocks.serialize()
+    return jsonify(stock1), 200
+
+@app.route('/stocks/<stockSymbol>', methods=['GET'])
+def get_stock_symbol(stockSymbol):
 
     stocks = Stock.query.filter(Stock.symbol.startswith(stockSymbol))
     if stocks is None:
