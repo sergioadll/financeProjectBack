@@ -201,7 +201,7 @@ def create_watchlist(current_user):
 
     return jsonify("Watchlist: "+ watchlist1.name+", created"), 200
 
-# MODIFICAR UN WATCHLIST (CAMBIAR NOMBRE O STOCKS)
+# MODIFICAR UN WATCHLIST (CAMBIAR NOMBRE O AGREGAR STOCKS)
 @app.route('/watchlist/<int:watchlist_id>', methods=['PUT'])
 @token_required
 def update_watchlist(current_user,watchlist_id):
@@ -233,25 +233,40 @@ def delete_watchlist(current_user,watchlist_id):
     db.session.commit()
     return jsonify("Watchlist deleted"), 200
 
+# ELIMINAR UN STOCK DE UN WATCHLIST
+@app.route('/watchlist/<int:watchlist_id>/<stock_symbol>', methods=['PUT'])
+@token_required
+def delete_stock(current_user,watchlist_id,stock_symbol):
+    request_watchlist=request.get_json()
+    watchlist1 = WatchList.query.get(watchlist_id)
+    print(stock_symbol, type(stock_symbol))
+    if watchlist1 is None:
+        raise APIException('Watchlist not found', status_code=404)
+
+    stock1 = Stock.query.filter_by(symbol=stock_symbol).first()
+    watchlist1.stocks.remove(stock1)
+    db.session.commit()
+    return jsonify("Watchlist Updated"), 200
+
 # STOCK CRUD
 # STOCK CRUD
 # STOCK CRUD
 
 # TRAER STOCK SEGÚN SU SYMBOL
-@app.route('/stock/<stockSymbol>', methods=['GET'])
-def get_stocks_symbol(stockSymbol):
+@app.route('/stock/<stock_symbol>', methods=['GET'])
+def get_stocks_symbol(stock_symbol):
 
-    stocks = Stock.query.filter_by(symbol=stockSymbol).first()
+    stocks = Stock.query.filter_by(symbol=stock_symbol).first()
     if stocks is None:
         raise APIException('Stock not found', status_code=404)
     stock1= stocks.serialize()
     return jsonify(stock1), 200
 
 # TRAER STOCKS QUE EMPIECEN POR...
-@app.route('/stocks/<stockSymbol>', methods=['GET'])
-def get_stock_symbol(stockSymbol):
+@app.route('/stocks/<stock_symbol>', methods=['GET'])
+def get_stock_symbol(stock_symbol):
 
-    stocks = Stock.query.filter(Stock.symbol.startswith(stockSymbol))
+    stocks = Stock.query.filter(Stock.symbol.startswith(stock_symbol))
     if stocks is None:
         raise APIException('Stock not found', status_code=404)
     stock1 =list(map(lambda x: x.serialize(), stocks))
