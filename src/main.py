@@ -262,20 +262,20 @@ def get_stocks_symbol(stock_symbol):
     stock1= stocks.serialize()
     return jsonify(stock1), 200
 
-# TRAER STOCKS QUE EMPIECEN POR...
+# TRAER STOCKS POR SYMBOL O NAME:
 @app.route('/stocks/<search>', methods=['GET'])
 def get_stock_search(search):
 
     stocks_by_symbol = Stock.query.filter(Stock.symbol.startswith(search))
-    stocks_by_name = Stock.query.filter(Stock.name.startswith(search))
+    stocks_by_name = Stock.query.filter(Stock.name.contains(search))
     if stocks_by_symbol is None and stocks_by_name is None:
         raise APIException('Stock not found', status_code=404)
-    stocks1 =list(map(lambda x: x.serialize(), stocks_by_symbol))
-    stocks2 =list(map(lambda x: x.serialize(), stocks_by_symbol))
-    print("name",stocks1)
-    print("symbol",stocks2)
-    #stocks1.append(stocks2)
-    return jsonify(stocks1), 200
+    list_symbol = set(stocks_by_symbol)
+    list_name = set(stocks_by_name)
+    stocks_symbol =list(map(lambda x: x.serialize(), stocks_by_symbol))
+    stocks_name =list(map(lambda x: x.serialize(), (list_name-list_symbol)))
+    
+    return jsonify(stocks_symbol+stocks_name), 200
 
 #TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE?)
 @app.route('/stock', methods=['GET'])
