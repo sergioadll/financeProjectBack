@@ -246,7 +246,7 @@ def delete_stock(current_user,watchlist_id,stock_symbol):
     stock1 = Stock.query.filter_by(symbol=stock_symbol).first()
     watchlist1.stocks.remove(stock1)
     db.session.commit()
-    return jsonify("Watchlist Updated"), 200
+    return jsonify("Stock Deleted From Watchlist"), 200
 
 # STOCK CRUD
 # STOCK CRUD
@@ -263,14 +263,19 @@ def get_stocks_symbol(stock_symbol):
     return jsonify(stock1), 200
 
 # TRAER STOCKS QUE EMPIECEN POR...
-@app.route('/stocks/<stock_symbol>', methods=['GET'])
-def get_stock_symbol(stock_symbol):
+@app.route('/stocks/<search>', methods=['GET'])
+def get_stock_search(search):
 
-    stocks = Stock.query.filter(Stock.symbol.startswith(stock_symbol))
-    if stocks is None:
+    stocks_by_symbol = Stock.query.filter(Stock.symbol.startswith(search))
+    stocks_by_name = Stock.query.filter(Stock.name.startswith(search))
+    if stocks_by_symbol is None and stocks_by_name is None:
         raise APIException('Stock not found', status_code=404)
-    stock1 =list(map(lambda x: x.serialize(), stocks))
-    return jsonify(stock1), 200
+    stocks1 =list(map(lambda x: x.serialize(), stocks_by_symbol))
+    stocks2 =list(map(lambda x: x.serialize(), stocks_by_symbol))
+    print("name",stocks1)
+    print("symbol",stocks2)
+    #stocks1.append(stocks2)
+    return jsonify(stocks1), 200
 
 #TRAERSE TODOS LOS STOCKS (AUTOCOMPLETE?)
 @app.route('/stock', methods=['GET'])
