@@ -17,7 +17,7 @@ from functools import wraps
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 # Import models
-from models import db, User, WatchList, Stock, SeedData
+from models import db, User, WatchList, Stock
 #
 app = Flask(__name__)
 app.url_map.strict_slashes = False
