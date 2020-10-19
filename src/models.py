@@ -76,31 +76,4 @@ class Stock(db.Model):
             "symbol": self.symbol,
         }
 
-class SeedData():
-    @staticmethod
-    def generate_data():
-        #get the data from external api
-        url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
-        payload = {}
-        headers = {
-        'X-Finnhub-Token': 'bsrbhmf48v6tucpg28a0',
-        'Cookie': '__cfduid=d93b1db03817fa9f12c3158268b3eba861600100583'
-        }
-        response = requests.request("GET", url, headers=headers, data=payload)
-        resp = response.json()
-        name=""
-        symbol=""
 
-        for i in range(len(resp)):
-            for c, v in resp[i].items():
-                if c == "description" and v != "":
-                    name=v
-                    #print(name1)
-                elif c == "symbol" and v != "":
-                    symbol=v
-                    #print(symbol1)
-            if Stock.query.filter_by(symbol=symbol).first() is None:
-                print("symbol: ", symbol, "name: ", name )
-                stock=Stock(name=name,symbol=symbol)
-                db.session.add(stock)
-                db.session.commit()
