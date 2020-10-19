@@ -80,7 +80,7 @@ class SeedData():
     @staticmethod
     def generate_data():
         #get the data from external api
-        url = "https://finnhub.io/api/v1/stock/symbol?exchange=US"
+        url = "https://finnhub.io/api/v1/stock/symbol?exchange=MC"
         payload = {}
         headers = {
         'X-Finnhub-Token': 'bsrbhmf48v6tucpg28a0',

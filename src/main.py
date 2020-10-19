@@ -270,9 +270,12 @@ def get_stock_search(search):
     stocks_by_name = Stock.query.filter(Stock.name.contains(search))
     if stocks_by_symbol is None and stocks_by_name is None:
         raise APIException('Stock not found', status_code=404)
+
+    stocks_symbol =list(map(lambda x: x.serialize(), stocks_by_symbol))
+    # Turn into sets to compare them and make one list of ...
+    # ... missing elements in stocks by name
     list_symbol = set(stocks_by_symbol)
     list_name = set(stocks_by_name)
-    stocks_symbol =list(map(lambda x: x.serialize(), stocks_by_symbol))
     stocks_name =list(map(lambda x: x.serialize(), (list_name-list_symbol)))
     
     return jsonify(stocks_symbol+stocks_name), 200
